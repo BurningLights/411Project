@@ -16,20 +16,21 @@
 	.type	local_elem_angle.1122, %object
 	.size	local_elem_angle.1122, 56
 local_elem_angle.1122:
-	.word	2949120
-	.word	1740967
-	.word	919789
-	.word	466945
-	.word	234379
-	.word	117304
-	.word	58666
-	.word	29335
-	.word	14668
-	.word	7334
-	.word	3667
-	.word	1833
-	.word	917
-	.word	458
+	@ Values atanh(1/2^i) for i = 1 to 14 in fixed point format (int)x>>16
+	.word	35999 @2949120
+	.word	16738 @1740967
+	.word	8235 @919789
+	.word	4101 @466945
+	.word	2048 @234379
+	.word	1024 @117304
+	.word	512 @58666
+	.word	256 @29335
+	.word	128 @14668
+	.word	64 @7334
+	.word	32 @3667
+	.word	16 @1833
+	.word	8 @917
+	.word	4 @458
 	.text
 	.align	2
 	.global	cordic_assembly
