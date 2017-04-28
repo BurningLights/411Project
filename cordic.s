@@ -227,17 +227,26 @@ cordic_assembly:
 	cmp	r3, #13
 	ble	.L9
 	@ Done with the number of iterations, so continue to wrap-up
+	@ Load the pointer to the x value in memory into r2 and the final x value into r3.
+	@ Store the final x value back into memory
 	ldr	r2, [fp, #-32]
 	ldr	r3, [fp, #-12]
 	str	r3, [r2, #0]
+	@ Load the pointer to the y value in memory into r3 and the final y value into r2.
+	@ Store the final y value back into memory	
 	ldr	r2, [fp, #-24]
 	ldr	r3, [fp, #-36]
 	str	r2, [r3, #0]
+	@ Load the pointer to the angle value in memory into r3 and the final angle value into r2.
+	@ Store the final angle value back into memory
 	ldr	r2, [fp, #-28]
 	ldr	r3, [fp, #-40]
 	str	r2, [r3, #0]
+	@ Set the stack pointer back to the frame pointer, to eliminate the local storage
 	add	sp, fp, #0
+	@ Pop the previous frame pointer back off of the stack
 	ldmfd	sp!, {fp}
+	@ Jump back to where the function was called from
 	bx	lr
 .L12:
 	.align	2
