@@ -31,21 +31,21 @@ local_elem_angle.1122:
 main:
 	@ Put the pointer to x in r0, the pointer to y in r1, the pointer to
 	@ the angle in r3, and the value 0 for rotational CORDIC in r4
-	ldr r0, XVal
-	ldr r1, YVal
-	ldr r2, angle
+	ldr r0, =XVal
+	ldr r1, =YVal
+	ldr r2, =angle
 	mov r3, #0
 	@ Call the cordic_assembly Function
 	@ The resulting x value is cosh(angle) and the y value is sinh(angle)
 	bl cordic_assembly
 	@ Load the cosh and sinh values into r0 and r1 to compute exp(angle)
-	ldr r0, XVal
+	ldr r0, =XVal
 	ldr r0, [r0]
-	ldr r1, YVal
+	ldr r1, =YVal
 	ldr r1, [r1]
 	@ Compute exp(angle) and store it in exponential
 	add r0, r0, r1
-	ldr r1, exponential
+	ldr r1, =exponential
 	str r0, [r1]
 	@ Exit
 	b .L12
