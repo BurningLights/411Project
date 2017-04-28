@@ -40,9 +40,17 @@ cordic_assembly:
 	@ args = 0, pretend = 0, frame = 40
 	@ frame_needed = 1, uses_anonymous_args = 0
 	@ link register save eliminated.
+	@ Save the frame pointer on the stack and decrement the stack pointer
 	str	fp, [sp, #-4]!
+	@ Save the current stack pointer as the new frame pointer
 	add	fp, sp, #0
+	@ Make 44 bytes of local storage space on the stack
 	sub	sp, sp, #44
+	@ Save registers r0 through r3 at the very top of the stack
+	@ fp - 32 contains a pointer to the initial x value
+	@ fp - 36 contains a pointer to the initial y value
+	@ fp - 40 contains a pointer to the angle value to calculate cosh, sinh, and exp for
+	@ fp - 44 contains a pointer to the CORDIC mode (rotation or vector)
 	str	r0, [fp, #-32]
 	str	r1, [fp, #-36]
 	str	r2, [fp, #-40]
