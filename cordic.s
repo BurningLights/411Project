@@ -1,20 +1,16 @@
 @ Code adapted from CORDIC implementation by Maximell and pcatkins at
 @ https://github.com/Maximell/Cordic/blob/master/cordic_implementations/cordic_assembly.s
-	.arch armv4t
-	.fpu softvfp
-	.eabi_attribute 20, 1
-	.eabi_attribute 21, 1
-	.eabi_attribute 23, 3
-	.eabi_attribute 24, 1
-	.eabi_attribute 25, 1
-	.eabi_attribute 26, 2
-	.eabi_attribute 30, 6
-	.eabi_attribute 18, 4
-	.file	"cordic_assembly.c"
+	.section .data
+XVal:
+	.word 1
+YVal:
+	.word 0
+angle:
+	.word 0
+exponential:
+	.word 0
+
 	.section	.rodata
-	.align	2
-	.type	local_elem_angle.1122, %object
-	.size	local_elem_angle.1122, 56
 local_elem_angle.1122:
 	@ Values atanh(1/2^i) for i = 1 to 14 in fixed point format (int)x>>16
 	.word	35999 @2949120
@@ -32,9 +28,27 @@ local_elem_angle.1122:
 	.word	8 @917
 	.word	4 @458
 	.text
-	.align	2
-	.global	cordic_assembly
-	.type	cordic_assembly, %function
+main:
+	@ Put the pointer to x in r0, the pointer to y in r1, the pointer to
+	@ the angle in r3, and the value 0 for rotational CORDIC in r4
+	ldr r0, XVal
+	ldr r1, YVal
+	ldr r2, angle
+	mov r3, #0
+	@ Call the cordic_assembly Function
+	@ The resulting x value is cosh(angle) and the y value is sinh(angle)
+	bl cordic_assembly
+	@ Load the cosh and sinh values into r0 and r1 to compute exp(angle)
+	ldr r0, XVal
+	ldr r0, [r0]
+	ldr r1, YVal
+	ldr r1, [r1]
+	@ Compute exp(angle) and store it in exponential
+	add r0, r0, r1
+	ldr r1, exponential
+	str r0, [r1]
+	@ Exit
+	b .L12
 cordic_assembly:
 	@ All numbers used for x, y, and z in this program are 32-bit fixed-point numbers,
 	@ with 16 bits before and 16 bits after the decimal point.
@@ -252,6 +266,3 @@ cordic_assembly:
 	.align	2
 .L11:
 	.word	local_elem_angle.1122
-	.size	cordic_assembly, .-cordic_assembly
-	.ident	"GCC: (Sourcery G++ Lite 2008q3-72) 4.3.2"
-	.section	.note.GNU-stack,"",%progbits
