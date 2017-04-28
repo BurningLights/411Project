@@ -89,7 +89,8 @@ cordic_assembly:
 	@ since vectoring mode is based on the target y value
 	sub	r3, fp, #24
 	str	r3, [fp, #-20]
-	@ fp - 20 contains a pointer to the target value
+	@ fp - 20 contains a pointer to the target value, which is the value
+	@ that controls the direction of rotation
 .L3:
 	@ Load the current x value into r3 and shift it left by 16 to convert it
 	@ to fixed point value. Then, store it back into fp - 12
@@ -113,63 +114,109 @@ cordic_assembly:
 	@ Go directly to .L4 to start the for loop
 	b	.L4
 .L9:
+	@ Load the current x value into r3, and store it in a temporary location at
+	@ fp - 16, so the old value can be accessed later
 	ldr	r3, [fp, #-12]
 	str	r3, [fp, #-16]
+	@ Load the target value into r3 using the pointer in fp - 20
 	ldr	r3, [fp, #-20]
 	ldr	r3, [r3, #0]
+	@ If the target value is >= 0, then go to L5 to determine which direction
+	@ the next rotation should be
 	cmp	r3, #0
 	bge	.L5
+	@ The target is less than 0, so load the CORDIC mode into r3 to determine which way to rotate
 	ldr	r3, [fp, #-44]
+	@ If the mode is 0, which is rotational mode, go to .L6 to do addition
 	cmp	r3, #0
 	beq	.L6
+	@ The mode is 1, which is vectoring mode, so fall into .L5 to determine which way to rotate
 .L5:
+	@ Load the target value into r3 using the pointer in fp - 20
 	ldr	r3, [fp, #-20]
 	ldr	r3, [r3, #0]
+	@ If the target value is less than 0, go to .L7 to do subtraction
 	cmp	r3, #0
 	blt	.L7
+	@ Load the CORDIC mode into r3. If it is zero, which is rotational mode,
+	@ go to .L7 to do subtraction
 	ldr	r3, [fp, #-44]
 	cmp	r3, #0
 	beq	.L7
+	@ If the CORDIC mode is 1 (vectoring mode), fall into .L6 to do addition
 .L6:
+	@ Load the current y value into r2 and the loop counter into r3
 	ldr	r2, [fp, #-24]
 	ldr	r3, [fp, #-8]
+	@ Add one to r3 because the loop counter goes from 0 - 13 and
+	@ the exponents for hyperbolic CORDIC operations go from 1 - 14
+	add r3, r3, #1
+	@ Compute x = x + (y >> loop counter)
 	mov	r2, r2, asr r3
 	ldr	r3, [fp, #-12]
 	add	r3, r3, r2
 	str	r3, [fp, #-12]
+	@ Load the current y value into r1, the old x value into r2, and the
+	@ loop counter into r3
 	ldr	r1, [fp, #-24]
 	ldr	r2, [fp, #-16]
 	ldr	r3, [fp, #-8]
+	@ Add one to r3 because the loop counter goes from 0 - 13 and
+	@ the exponents for hyperbolic CORDIC operations go from 1 - 14
+	add r3, r3, #1
+	@ Compute y = y + (x >> loop counter)
 	mov	r3, r2, asr r3
-	rsb	r3, r3, r1
+	add	r3, r3, r1
 	str	r3, [fp, #-24]
+	@ Load the current loop counter into r2
 	ldr	r2, [fp, #-8]
+	@ Load the address of the lookup table into r3
 	ldr	r3, .L11
+	@ Load the current value from the arctanh lookup table into r2
 	ldr	r2, [r3, r2, asl #2]
+	@ Compute angle = angle + lookup[loop counter]
 	ldr	r3, [fp, #-28]
 	add	r3, r2, r3
 	str	r3, [fp, #-28]
+	@ Go to .L8 to increment the loop counter
 	b	.L8
 .L7:
+	@ Load the current y value into r2 and the loop counter into r3
 	ldr	r2, [fp, #-24]
 	ldr	r3, [fp, #-8]
+	@ Add one to r3 because the loop counter goes from 0 - 13 and
+	@ the exponents for hyperbolic CORDIC operations go from 1 - 14
+	add r3, r3, #1
+	@ Compute x = x - (y >> loop counter)
 	mov	r2, r2, asr r3
 	ldr	r3, [fp, #-12]
-	rsb	r3, r2, r3
+	rsb	r3, r3, r2
 	str	r3, [fp, #-12]
+	@ Load the current y value into r1, the old x value into r2, and the
+	@ loop counter into r3
+	ldr	r1, [fp, #-24]
 	ldr	r2, [fp, #-16]
 	ldr	r3, [fp, #-8]
-	mov	r2, r2, asr r3
-	ldr	r3, [fp, #-24]
-	add	r3, r2, r3
-	str	r3, [fp, #-24]
-	ldr	r1, [fp, #-28]
-	ldr	r2, [fp, #-8]
-	ldr	r3, .L11
-	ldr	r3, [r3, r2, asl #2]
+	@ Add one to r3 because the loop counter goes from 0 - 13 and
+	@ the exponents for hyperbolic CORDIC operations go from 1 - 14
+	add r3, r3, #1
+	@ Compute y = y - (x >> loop counter)
+	mov	r3, r2, asr r3
 	rsb	r3, r3, r1
+	str	r3, [fp, #-24]
+	@ Load the current loop counter into r2
+	ldr	r2, [fp, #-8]
+	@ Load the address of the lookup table into r3
+	ldr	r3, .L11
+	@ Load the current value from the arctanh lookup table into r2
+	ldr	r2, [r3, r2, asl #2]
+	@ Compute angle = angle - lookup[loop counter]
+	ldr	r3, [fp, #-28]
+	rsb	r3, r2, r3
 	str	r3, [fp, #-28]
+	@ Fall through to .L8 to increment the loop counter
 .L8:
+	@ Load the loop counter into r3, increment it, and store it back
 	ldr	r3, [fp, #-8]
 	add	r3, r3, #1
 	str	r3, [fp, #-8]
