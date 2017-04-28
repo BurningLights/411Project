@@ -36,6 +36,8 @@ local_elem_angle.1122:
 	.global	cordic_assembly
 	.type	cordic_assembly, %function
 cordic_assembly:
+	@ All numbers used for x, y, and z in this program are 32-bit fixed-point numbers,
+	@ with 16 bits before and 16 bits after the decimal point.
 	@ Function supports interworking.
 	@ args = 0, pretend = 0, frame = 40
 	@ frame_needed = 1, uses_anonymous_args = 0
@@ -55,36 +57,60 @@ cordic_assembly:
 	str	r1, [fp, #-36]
 	str	r2, [fp, #-40]
 	str	r3, [fp, #-44]
+	@ Load the starting x value into r3 from the pointer
 	ldr	r3, [fp, #-32]
 	ldr	r3, [r3, #0]
+	@ fp - 12 stores the current x value
 	str	r3, [fp, #-12]
+	@ Load the starting y value into r3 from the pointer
 	ldr	r3, [fp, #-36]
 	ldr	r3, [r3, #0]
+	@ fp - 24 stores the current y value
 	str	r3, [fp, #-24]
+	@ Load the starting angle value into r3 from the pointer
 	ldr	r3, [fp, #-40]
 	ldr	r3, [r3, #0]
+	@ fp - 28 contains the current angle value
 	str	r3, [fp, #-28]
+	@ Load the CORDIC mode into r3
 	ldr	r3, [fp, #-44]
+	@ A value of 0 means rotational CORDIC mode
+	@ In vectoring mode skip down to .L2
+	@ For rotational mode, do the below code and then go on to .L3
 	cmp	r3, #0
 	bne	.L2
+	@ For rotational mode, make a pointer to the angle value,
+	@ since rotational mode is based on the target angle
 	sub	r3, fp, #28
 	str	r3, [fp, #-20]
 	b	.L3
 .L2:
+	@ For vectoring mode, make a pointer to the y value,
+	@ since vectoring mode is based on the target y value
 	sub	r3, fp, #24
 	str	r3, [fp, #-20]
+	@ fp - 20 contains a pointer to the target value
 .L3:
+	@ Load the current x value into r3 and shift it left by 16 to convert it
+	@ to fixed point value. Then, store it back into fp - 12
 	ldr	r3, [fp, #-12]
 	mov	r3, r3, asl #16
 	str	r3, [fp, #-12]
+	@ Load the current y value into r3 and shift it left by 16 to convert it
+	@ to fixed point value. Then, store it back into fp - 24	
 	ldr	r3, [fp, #-24]
 	mov	r3, r3, asl #16
 	str	r3, [fp, #-24]
+	@ Load the current angle value into r3 and shift it left by 16 to convert it
+	@ to fixed point value. Then, store it back into fp - 28
 	ldr	r3, [fp, #-28]
 	mov	r3, r3, asl #16
 	str	r3, [fp, #-28]
+	@ Move 0 into r3, to be the starting value of the loop counter
+	@ fp - 8 containst the current loop counter
 	mov	r3, #0
 	str	r3, [fp, #-8]
+	@ Go directly to .L4 to start the for loop
 	b	.L4
 .L9:
 	ldr	r3, [fp, #-12]
@@ -148,9 +174,12 @@ cordic_assembly:
 	add	r3, r3, #1
 	str	r3, [fp, #-8]
 .L4:
+	@ Retrieve the current loop counter from fp - 8. There will be 14 iterations of the loop,
+	@ so go to .L9, the loop body, if it is less than or equal to 13
 	ldr	r3, [fp, #-8]
 	cmp	r3, #13
 	ble	.L9
+	@ Done with the number of iterations, so continue to wrap-up
 	ldr	r2, [fp, #-32]
 	ldr	r3, [fp, #-12]
 	str	r3, [r2, #0]
