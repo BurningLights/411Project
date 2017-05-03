@@ -161,19 +161,25 @@ exit:
 	@ by this amount
 	LDR r2, =gain
 	VLDR.f32 s2,[r2]
+	VCVT.f32.s32 s2, s2
 
 	LDR r3, =x
 	VLDR.f32 s3, [r3]
+	VCVT.f32.s32 s3, s3
 	LDR r3,[r3]
 	VDIV.f32 s3, s3,s2
 
 	LDR r4, =y
 	VLDR.f32 s4, [r4]
+	VCVT.f32.s32 s4, s4
 	LDR r4, [r4]
 	VDIV.f32 s4, s4,s2
 
 	@ e^x = sinh + cosh
-	VADD.f32 s5,s4,s3
+	ADD r5, r3, r4
+	VMOV.f32 s5, r5
+	VCVT.f32.s32 s5, s5
+	VDIV.f32 s5, s5, s2
 	
 	swi 0x11
 	.end
